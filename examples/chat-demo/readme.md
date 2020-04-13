@@ -1,6 +1,6 @@
-# Simple-demo
+# Chat-demo
 
-简单的单向 RPC
+带有群发功能的双向通信。（在群发中排除了自己，说明已经有了身份鉴别能力）
 
 ## Usage
 
@@ -20,3 +20,5 @@ make
 ## warning
 
 这套逻辑不要直接使用在生产环境上。
+
+具体的逻辑请参考[如何解决双向调用中的身份对应](../../readme.md#solve-the-paradox-of-biconnections-identification-problem)。
