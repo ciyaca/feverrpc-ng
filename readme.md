@@ -77,6 +77,20 @@ int main(){
 ### the things you should implement by yourself
 因为最底层只提供回调函数的支持，那么即时通信的功能（收到一个消息，转发给任意用户）不在 feverrpc 负责的内容之中。想要达成这个目的，需要上层在注册的函数中，将获取到的信息转发给业务逻辑，然后再从业务逻辑调用其他 Socket 的 rpc。
 
+### solve the paradox of biconnection's identification problem
+
+在使用双向的 RPC 中会遇到一个棘手的问题，就是在服务端作为 Caller 的代码没有办法知道对应的 Callee 是哪个。
+比如当设计即时通信的服务时，自己 bind 的代码被调用了以后，并不能分清楚要将消息发给哪些 RPC 的对端。
+
+在想了很长时间后我发现这个问题还是需要交给通信协议（交互逻辑）去实现。简单来说，
+只要满足以下两条要求就可以获得足够的信息，保证双向调用不会遇到身份认证问题。
+
+1. 客户端除了 login，其他的方法必须首先传入能够标识唯一 ID 的参数信息。
+2. 服务端在获得 S2C 的 RPC 连接后，会立刻调用 getID 来获取上一个要求中同样的 ID 信息。
+
+这样，在业务上足够完成身份的绑定，以便后续的操作。
+
+
 ### Related Efforts
 
 - 感谢 [button-rpc](https://github.com/button-chen/buttonrpc_cpp14) 给予了我最关键的知识点

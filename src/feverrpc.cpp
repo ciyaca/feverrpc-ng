@@ -1,10 +1,11 @@
 #include <cstdio>
+#include <cstdlib>
 #include <feverrpc/feverrpc.hpp>
 #include <netinet/in.h>
 #include <sys/socket.h>
 
 namespace FeverRPC {
-
+// TODO better error
 int send_data(const int &socket_handler, const char *data_send_buffer,
               int data_send_size) {
     int err = 0;
@@ -35,7 +36,7 @@ int recv_data(const int &socket_handler, msgpack::sbuffer &data_recv_buffer) {
     int recv_len = 0;
     int err = 0;
     char _buffer[_CHUNK_SIZE + 10] = {};
-    puts("[recv_data] blocked");
+    // TODO
     err = read(socket_handler, (void *)&recv_len, sizeof(unsigned int));
     if (err < 0) {
         puts("error < 0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
@@ -48,7 +49,8 @@ int recv_data(const int &socket_handler, msgpack::sbuffer &data_recv_buffer) {
         err = read(socket_handler, _buffer, _CHUNK_SIZE);
         // 直接写入 msgpack::sbuffer
         if (err < 0) {
-            puts("error < 0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            perror("recv_data");
+            exit(EXIT_FAILURE);
         }
         data_recv_buffer.write(_buffer, _size);
 

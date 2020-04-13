@@ -7,6 +7,8 @@ class Client : public FeverRPC {
     int _c2s_socket_handler;
     int _s2c_socket_handler;
 
+    template <typename Ret> Ret socket_call(msgpack::sbuffer &buffer);
+    void listen(const int &_s2c_socket_handler);
   public:
     Client(const char *host);
     ~Client();
@@ -14,9 +16,6 @@ class Client : public FeverRPC {
     void s2c();
     template <typename Ret, typename... Args>
     Ret call(std::string name, Args... args);
-    // client
-    template <typename Ret> Ret socket_call(msgpack::sbuffer &buffer);
-    void listen(const int &_s2c_socket_handler);
 };
 
 // FeverRPC::Client

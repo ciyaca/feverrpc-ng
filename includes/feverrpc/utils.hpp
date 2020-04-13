@@ -1,21 +1,38 @@
-#ifndef FEVERRPC_UTILS_H_
-#define FEVERRPC_UTILS_H_
+#pragma once
+namespace std {
+#ifndef DEBUG
+#define dbgprintf(format, args...)                                               \
+    printf("[%s,%s,%d] " format "\n", __FILE__, __FUNCTION__, __LINE__, args)
+#define dbgputs(string)                                                          \
+    printf("[%s,%s,%d] " string "\n", __FILE__, __FUNCTION__, __LINE__)
+#else
+#define dbgprintf(format, args...)                                               \
+    {}
+#define dbgputs(string)                                                          \
+    {}
+#endif
 
-#include "msgpack.hpp"
-#include <fstream>
-#include <string>
-#include <vector>
-#include <iterator>
-using namespace std;
+} // namespace std
 
-// struct Login {
-//     string username;
-//     string password;
-//     MSGPACK_DEFINE(username, password);
-// };
+#include <thread>
 
-// vector<char> read_file(string file_name);
-// void save_file(string file_name, vector<char> &data);
-// int login(Login);
+class thread_guard {
+    std::thread &t;
 
-#endif // FEVERRPC_UTILS_H_
+  public:
+    explicit thread_guard(std::thread &_t) : t(_t){};
+
+    ~thread_guard() {
+        puts("destructing thread");
+        if (t.joinable()) {
+            printf("[%lld]waiting for anthor thread to destruct %lld \n",
+                   std::this_thread::get_id(), t.get_id());
+
+            t.join();
+            printf("[%lld]thread destructed\n", std::this_thread::get_id());
+        }
+    }
+
+    thread_guard(const thread_guard &) = delete;
+    thread_guard &operator=(const thread_guard &) = delete;
+};
