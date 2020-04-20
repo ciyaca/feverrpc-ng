@@ -98,8 +98,10 @@ class Serializer {
 class FeverRPC {
 
   protected:
-    //  强枚举类型
+    // 强枚举类型
+    // whether is Client or Server
     enum class rpc_role { RPC_CLINT, RPC_SERVER };
+    // return code
     enum class rpc_ret_code : unsigned int {
         RPC_RET_SUCCESS = 0,
         RPC_RET_FUNCTION_NOT_BIND,
@@ -107,18 +109,27 @@ class FeverRPC {
         RPC_RET_UNRETURNED,
     };
 
+    // role, !deprecated!
     rpc_role _rpc_role;
+    // return code, !deprecated!
     rpc_ret_code _rpc_ret_code;
+    // host
     const char *_HOST;
+    // mapping form function name to function
+    // can be state as static parameter
     std::map<std::string, std::function<void(Serializer *, msgpack::object)>>
         funcs_map;
 
   public:
-    // server
+    // bind name to function
     template <typename Func> void bind(std::string name, Func func);
 
   protected:
-    // both
+    // callproxy 由一组函数构成，实际上内部实在解开 msgpack 的包，
+    // 转换为可以传入函数的实际参数。
+    // 最终 callproxy 调用 call_helper 进行真实的函数调用，
+    // 并再次通过 callproxy 将返回值传回。
+    // callproxy 是被注册进 map 中的，相当于一个闭包。
     template <typename Func>
     void callproxy(Func f, Serializer *pr, msgpack::object args_obj);
     template <typename Ret, typename... Args>
@@ -128,19 +139,23 @@ class FeverRPC {
     void callproxy_(std::function<Ret(Args... ps)> func, Serializer *pr,
                     msgpack::object args_obj);
     template <typename Ret, typename Func, typename... Args>
+    // 进行实际的函数调用。
     Ret call_helper(Func f, std::tuple<Args...> args);
 
+    // 通过 function name 选择相应的 callproxy，
+    // 并进行调用。
     Serializer call_(std::string name, msgpack::object args_obj);
 
     Serializer call_chooser(std::string &name, msgpack::object &args_obj);
-    // more helper functions.
+    // 发起 rpc 调用，并接收返回值
     int send_and_recv(const int &socket_handler, const char *data_send_buffer,
                       int data_send_size, msgpack::sbuffer &data_recv_buffer);
 
     template <typename Ret> Ret unpack_ret_val(msgpack::sbuffer &buffer);
 
+    // 监听请求，执行后发送返回值
     Serializer recv_call_and_send(const int &socket_handler);
-
+    // 帮助输出
     void print_sbuffer(msgpack::sbuffer &buffer);
 };
 
@@ -150,6 +165,7 @@ class FeverRPC {
 //
 /////////////////////////////////////////////////////////////
 template <typename Func> void FeverRPC::bind(std::string name, Func func) {
+    // 注册闭包
     funcs_map[name] = std::bind(&FeverRPC::callproxy<Func>, this, func,
                                 std::placeholders::_1, std::placeholders::_2);
 }
@@ -162,7 +178,7 @@ inline void FeverRPC::callproxy(Func f, Serializer *pr,
 template <typename Ret, typename... Args>
 inline void FeverRPC::callproxy_(Ret (*func)(Args...), Serializer *pr,
                                  msgpack::object args_obj) {
-
+    // 解开返回值
     callproxy_(std::function<Ret(Args...)>(func), pr, args_obj);
 }
 template <typename Ret, typename... Args>
@@ -171,6 +187,7 @@ void FeverRPC::callproxy_(std::function<Ret(Args... ps)> func, Serializer *pr,
     std::tuple<Args...> args;
     args_obj.convert(args);
 
+    // 解开参数
     Ret ret = call_helper<Ret>(func, args);
 
     msgpack::pack(pr->buffer, ret);
@@ -178,6 +195,8 @@ void FeverRPC::callproxy_(std::function<Ret(Args... ps)> func, Serializer *pr,
 }
 template <typename Ret, typename Func, typename... Args>
 Ret FeverRPC::call_helper(Func f, std::tuple<Args...> args) {
+    // 利用 c++17 新特性进行函数调用
+    // 否则要手动展开
     return std::apply(f, args);
 }
 

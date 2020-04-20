@@ -23,13 +23,14 @@ namespace FeverRPC {
 
     class Caller : FeverRPC {
         private:
+        // inner socket handler
         int socket_hd;
         template <typename Ret>
         Ret socket_call(msgpack::sbuffer &);
         public:
         // 送入已经连接的 Socket
         Caller(int socket_hd): socket_hd(socket_hd) {};
-        // call
+        // make rpc call
         template<typename Ret, typename... Args>
         Ret call(std::string name, Args... args);
     };

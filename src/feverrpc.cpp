@@ -3,16 +3,19 @@
 #include <feverrpc/feverrpc.hpp>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <feverrpc/utils.hpp>
 
 namespace FeverRPC {
 // TODO better error
+
+// 封装任意长大小数据的传输
 int send_data(const int &socket_handler, const char *data_send_buffer,
               int data_send_size) {
     int err = 0;
     err =
         send(socket_handler, (void *)&data_send_size, sizeof(unsigned int), 0);
     if (err < 0) {
-        puts("error < 0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        dbgputs("error < 0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     }
     int sent_size = 0;
 
@@ -25,13 +28,14 @@ int send_data(const int &socket_handler, const char *data_send_buffer,
                    0);
 
         if (err < 0) {
-            puts("error < 0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            dbgputs("error < 0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
         }
         sent_size += _size;
     }
     return err;
 }
 
+// 封装任意长大小数据的接收
 int recv_data(const int &socket_handler, msgpack::sbuffer &data_recv_buffer) {
     int recv_len = 0;
     int err = 0;
@@ -39,7 +43,7 @@ int recv_data(const int &socket_handler, msgpack::sbuffer &data_recv_buffer) {
     // TODO
     err = read(socket_handler, (void *)&recv_len, sizeof(unsigned int));
     if (err < 0) {
-        puts("error < 0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        dbgputs("error < 0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     }
     int recv_size = 0;
     while (recv_size < recv_len) {
@@ -60,6 +64,7 @@ int recv_data(const int &socket_handler, msgpack::sbuffer &data_recv_buffer) {
     return err;
 }
 
+// 封装连接 socket
 int connect_socket(const char *__host, const int __port,
                    int &new_socket_handler) {
     // return err;
@@ -68,24 +73,25 @@ int connect_socket(const char *__host, const int __port,
 
     sockaddr_in serv_addr;
     if ((new_socket_handler = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        printf("\n Socket creation error \n");
+        dbgputs("\n Socket creation error \n");
         exit(-1);
     }
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(__port);
     if (inet_pton(AF_INET, __host, &serv_addr.sin_addr) <= 0) {
-        printf("\nInvalid address/ Address not supported \n");
+        dbgputs("\nInvalid address/ Address not supported \n");
         exit(-1);
     };
     if (connect(new_socket_handler, (sockaddr *)&serv_addr, sizeof(serv_addr)) <
         0) {
-        printf("\nConnection Failed \n");
+        dbgputs("\nConnection Failed \n");
         SocketException e;
         throw e;
     }
     return err;
 }
 
+// 初始化 server 的监听 socket
 int initialize_socket(const int __port, int &server_fd, sockaddr_in &address) {
     int opt = 1;
     // Creating socket file descriptor
@@ -117,11 +123,11 @@ int initialize_socket(const int __port, int &server_fd, sockaddr_in &address) {
 }
 
 Serializer FeverRPC::call_(std::string name, msgpack::object args_obj) {
-    printf("[%lld]in [call_], retrieving function.\n",
+    dbgprintf("[%lld]in [call_], retrieving function.\n",
            std::this_thread::get_id());
     Serializer ds;
     if (funcs_map.count(name) == 0) {
-        printf("function name error. name:%s\n", name.c_str());
+        dbgprintf("function name error. name:%s\n", name.c_str());
         FunctionCallException e;
         throw e;
     }
@@ -140,11 +146,12 @@ int FeverRPC::send_and_recv(const int &socket_handler,
     err += recv_data(socket_handler, data_recv_buffer);
     return err;
 }
+
 Serializer FeverRPC::recv_call_and_send(const int &socket_handler) {
     // 将会存储 name 和 args
     msgpack::sbuffer msg_buffer;
 
-    // ! recv_data from socket.
+    // recv_data from socket.
     recv_data(socket_handler, msg_buffer);
     // https://github.com/msgpack/msgpack-c/blob/master/QUICKSTART-CPP.md#streaming-feature
     // deserializes these objects using msgpack::unpacker.
@@ -169,14 +176,14 @@ Serializer FeverRPC::recv_call_and_send(const int &socket_handler) {
     std::string func_name;
     name_obj.convert(func_name);
 
-    // ! execute funciton with args.
+    // execute funciton with args.
     Serializer ans = call_chooser(func_name, args_obj);
-    // ! 3. buffer -> msgpack::sbuffer.
+    // buffer -> msgpack::sbuffer.
     Serializer ret;
     ret.buffer.write(ans.buffer.data(), ans.buffer.size());
-    // ! 4. send data
+    // send data
     send_data(socket_handler, ans.buffer.data(), ans.buffer.size());
-    printf("[recvcallandsend] buffer.data() %d", ret.buffer.size());
+    dbgprintf("[recvcallandsend] buffer.data() %d", ret.buffer.size());
     return ret;
 }
 
@@ -186,8 +193,7 @@ Serializer FeverRPC::call_chooser(std::string &func_name,
 }
 
 void FeverRPC::print_sbuffer(msgpack::sbuffer &buffer) {
-    puts("[print_sbuffer]start");
-    std::cout << buffer.size() << std::endl;
+    dbgputs("[print_sbuffer]start");
     // copy buffer
     msgpack::object_handle oh = msgpack::unpack(buffer.data(), buffer.size());
 
@@ -195,10 +201,7 @@ void FeverRPC::print_sbuffer(msgpack::sbuffer &buffer) {
     // is alive.
     msgpack::object deserialized = oh.get();
 
-    // msgpack::object supports ostream.
-    std::cout << '[' << std::this_thread::get_id() << ']' << deserialized
-              << std::endl;
-    puts("[print_sbuffer]end");
+    dbgputs("[print_sbuffer]end");
 }
 
 

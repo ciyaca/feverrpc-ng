@@ -15,6 +15,7 @@ Factory::Factory() {
 }
 
 Caller Factory::accept() {
+    // 监听 socket 连接，返回 caller
 
     int new_socket_handler;
     if ((new_socket_handler =
