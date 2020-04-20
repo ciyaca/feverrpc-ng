@@ -10,6 +10,13 @@ make
 ./bin/server
 
 ./bin/client
+
+# debug make, use `make clean` before regenerate
+CFLAG="-DDEBUG" make
+
+./bin/server
+
+./bin/client
 ```
 
 先开启一个服务端，然后开启多个客户端。

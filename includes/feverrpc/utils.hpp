@@ -1,6 +1,6 @@
 #pragma once
 namespace std {
-#ifndef DEBUG
+#ifdef DEBUG
 #define dbgprintf(format, args...)                                               \
     printf("[%s,%s,%d] " format "\n", __FILE__, __FUNCTION__, __LINE__, args)
 #define dbgputs(string)                                                          \
@@ -23,13 +23,13 @@ class thread_guard {
     explicit thread_guard(std::thread &_t) : t(_t){};
 
     ~thread_guard() {
-        puts("destructing thread");
+        dbgputs("destructing thread");
         if (t.joinable()) {
-            printf("[%lld]waiting for anthor thread to destruct %lld \n",
+            dbgprintf("[%lld]waiting for anthor thread to destruct %lld",
                    std::this_thread::get_id(), t.get_id());
 
             t.join();
-            printf("[%lld]thread destructed\n", std::this_thread::get_id());
+            dbgprintf("[%lld]thread destructed", std::this_thread::get_id());
         }
     }
 

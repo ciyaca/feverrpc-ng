@@ -2,10 +2,10 @@ INCLUDE=-I../../includes
 MSGPACK=-Imsgpack/include
 
 bin/%.o:%.cpp
-	g++ -c $< ${MSGPACK} ${INCLUDE} --std=c++17 -o $@
+	g++ -c $< ${MSGPACK} ${INCLUDE} --std=c++17 -o $@ $(CFLAGS)
 
 bin/%.o:../../src/%.cpp
-	g++ -c $< ${MSGPACK} ${INCLUDE} --std=c++17 -o $@
+	g++ -c $< ${MSGPACK} ${INCLUDE} --std=c++17 -o $@ $(CFLAGS)
 
 all: bin server client
 

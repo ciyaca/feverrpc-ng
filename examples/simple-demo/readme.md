@@ -10,4 +10,11 @@ make
 ./bin/server
 
 ./bin/client
+
+# debug make, use `make clean` before regenerate
+CFLAG="-DDEBUG" make
+
+./bin/server
+
+./bin/client
 ```
