@@ -2,6 +2,7 @@
 // may use
 // https://github.com/clpsz/linux-ipcs/tree/master/XSI_msgq
 #include "feverrpc/feverrpc.hpp"
+#include "feverrpc/utils.hpp"
 #include <msgpack/v3/sbuffer_decl.hpp>
 #include <netinet/in.h>
 
@@ -37,6 +38,7 @@ namespace FeverRPC {
 
         template<typename Ret, typename... Args>
         Ret Caller::call(std::string name, Args... args){
+            dbgprintf("start call some client's %s", name.c_str());
             msgpack::sbuffer bf;
 
             msgpack::packer<msgpack::sbuffer> pk(&bf);

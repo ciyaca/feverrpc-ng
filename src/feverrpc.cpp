@@ -11,13 +11,16 @@ namespace FeverRPC {
 // 封装任意长大小数据的传输
 int send_data(const int &socket_handler, const char *data_send_buffer,
               int data_send_size) {
+    dbgputs("");
     int err = 0;
     err =
-        send(socket_handler, (void *)&data_send_size, sizeof(unsigned int), 0);
+    send(socket_handler, (void *)&data_send_size, sizeof(unsigned int), MSG_NOSIGNAL);
     if (err < 0) {
         dbgputs("error < 0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+        throw SocketException();
     }
     int sent_size = 0;
+    dbgprintf("first sent success! %d", err);
 
     while (sent_size < data_send_size) {
         int _size = sent_size + _CHUNK_SIZE < data_send_size
@@ -25,10 +28,11 @@ int send_data(const int &socket_handler, const char *data_send_buffer,
                         : (data_send_size - sent_size);
 
         err = send(socket_handler, (void *)&data_send_buffer[sent_size], _size,
-                   0);
+                   MSG_NOSIGNAL);
 
         if (err < 0) {
             dbgputs("error < 0 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+            throw SocketException();
         }
         sent_size += _size;
     }

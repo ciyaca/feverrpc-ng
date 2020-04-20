@@ -1,5 +1,6 @@
 // Server side C/C++ program to demonstrate Socket programming
 #include "feverrpc/feverrpc-server.hpp"
+#include "feverrpc/feverrpc.hpp"
 #include "feverrpc/utils.hpp"
 #include <feverrpc/feverrpc-factory.hpp>
 #include <string>
@@ -15,15 +16,27 @@ vector<std::pair<string, FeverRPC::Caller>> vec;
 // 改代码会注册到 RPC 中，并由客户端调用。
 // `token` 是客户端传来的 id。
 int broadcast(string token, string message) {
-    for (auto i = vec.begin(); i != vec.end(); i++) {
 
+    dbgprintf("before broadcast, total connection is %d", vec.size());
+
+    for (auto i = vec.begin(); i != vec.end(); i++) {
         // 当不是自己的时候
         if (i->first != token) {
-            dbgprintf("token %s", token.c_str());
-            // 反向调用客户端代码
-            i->second.call<int>("print", token + " say: " +  message);
+            dbgprintf("token %s", i->first.c_str());
+            try {
+                // 反向调用客户端代码
+                i->second.call<int>("print", token + " say: " + message);
+                dbgputs("second.call success");
+            } catch (FeverRPC::SocketException e) {
+                // 当客户端断开连接时，服务端无法再次调用对方。
+                dbgprintf("because socket broken, we remove %s's caller", i->first.c_str());
+                vec.erase(i);
+            }
         }
     }
+
+    dbgprintf("after broadcast, total connection is %d", vec.size());
+
     return 1;
 }
 
